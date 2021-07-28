@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../config/config.dart';
@@ -20,14 +21,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _loading = false;
 
-  final cUsername = TextEditingController();
+  final cEmail = TextEditingController();
   final cPassword = TextEditingController();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final _loginFormKey = GlobalKey<FormState>();
 
-  final String username = "admin";
-  final String password = "admin";
+  final String email = "admin@gmail";
+  final String password = "1234567";
 
   @override
   void initState() {
@@ -39,11 +40,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-          key: scaffoldKey,
           backgroundColor: Colors.grey[100],
           body: Container(
             alignment: Alignment.center,
-            child: ScrollConfiguration(
               child: ListView(
                 shrinkWrap: true,
                 children: [
@@ -65,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 50,
                           ),
                           TextFieldWidget(
-                            textController: cUsername,
+                            textController: cEmail,
                             hintText: "Email",
                             obscureText: false,
                             prefixIconData: Icons.email,
@@ -84,13 +83,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               SizedBox(
                                 height: 15.0,
-                              ),
-                              InkWell(
-                                onTap: () {},
-                                child: Text(
-                                  "Forgot Password?",
-                                  style: TextStyle(color: Colors.blue),
-                                ),
                               ),
                             ],
                           ),
@@ -124,57 +116,57 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-            ),
           )),
     );
   }
 
   submitDataLogin() async {
-
     setState(() {
       _loading = true;
     });
-    var responseStatus;
-    var data;
-    try{
-      final responseData = await http.post(urlLogin, body: {
-        "email": cUsername.text,
+
+    try {
+      await http.post(urlLogin, body: {
+        "email": cEmail.text,
         "password": cPassword.text,
+      }, headers: {
+        "Accept": "application/json",
+        "Access-Control_Allow_Origin": "*"
+      }).then((Response value) {
+        var response = jsonDecode(value.body);
+        if (value.statusCode == 201) {
+          //simpan data login
+          final dataFullname = response[0]["fullname"];
+          final dataEmail = response[0]["email"];
+          final dataPhone = response[0]["number_phone"];
+          final dataLevel = response[0]["level"];
+          _setDataPref(
+              name: dataFullname,
+              email: dataEmail,
+              phone: dataPhone,
+              level: dataLevel
+          ).then((value) {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (context) => HomeScreen()));
+            toast("Login berhasil");
+          });
+        } else {
+          toast("Email atau password Anda salah");
+        }
       });
-      data = jsonDecode(responseData.body);
-      responseStatus = responseData.statusCode;
-      setState(() {
-        _loading = false;
-      });
-    }on SocketException{
+    } on SocketException {
       toast("No Internet Connection");
       setState(() {
         _loading = false;
       });
     }
-
-    print(data[0]);
-    final dataFullname = data[0]["fullname"];
-    final dataEmail = data[0]["email"];
-    final dataPhone = data[0]["number_phone"];
-    final dataLevel = data[0]["level"];
-
-    if(responseStatus == 201){
-      setState(() async {
-         await setDataPref(name: dataFullname, email: dataEmail, phone: dataPhone, level: dataLevel);
-
-      // toast("Login berhasil");
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(),));
-      });
-    }else{
-      toast("Email atau password Anda salah");
-    }
-     
-
+    setState(() {
+      _loading = false;
+    });
   }
 
-  setDataPref({ String name, String email, String phone, String level}) async {
-    var sharedPreference = await SharedPreferences.getInstance();
+  Future<void> _setDataPref({ String name, String email, String phone, String level}) async {
+    SharedPreferences sharedPreference = await SharedPreferences.getInstance();
     setState(() {
       sharedPreference.setInt("value", 1);
       sharedPreference.setString("sName", name);
@@ -185,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   isLogin() async {
-    var sharedPreference = await SharedPreferences.getInstance();
+    SharedPreferences sharedPreference = await SharedPreferences.getInstance();
     setState(() {
       int status = sharedPreference.get("value");
       if(status == 1){
