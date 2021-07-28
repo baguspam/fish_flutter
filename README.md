@@ -6,3 +6,8 @@ A new Flutter project.
 
 username : admin@gmail.com
 password : 1234567
+
+# Untuk open Web (Bugs CORS origin)
+- install <a href="https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf">Allow CORS: Access-Control-Allow-Origin</a>
+- Aktifkan/allow Cors dari extention
+- Copy link url ke Google chrome (debug android) yang tidak diprivate tapi jangan diclose debug browser dari android studio agar masih bisa dibuka.
